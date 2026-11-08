@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  testes:
+    name: testes (${{ matrix.so }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.so }}
+    strategy:
+      fail-fast: false
+      matrix:
+        so: [ubuntu-latest, windows-latest, macos-latest]
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # O glob precisa do bash: no PowerShell do runner o `testes/*.test.js`
+      # chega ao node como texto literal e ele procura um arquivo com
+      # asterisco no nome.
+      - name: nucleo
+        shell: bash
+        run: node --test testes/nucleo.test.js
+      - name: medidas (resolve os dez tabuleiros)
+        shell: bash
+        run: node --test testes/medidas.test.js
+
+  medidas:
+    name: tabelas do README
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: os dois testes de quatro em linha
+        run: node ferramentas/medidor.js alinhamento
+      - name: o bitboard contra a grade
+        run: node ferramentas/medidor.js juiz
+      - name: o que a poda corta
+        run: node ferramentas/medidor.js poda
+      - name: o espelho
+        run: node ferramentas/medidor.js espelho
+      - name: o valor exato de cada tabuleiro
+        run: node ferramentas/medidor.js resultado
+      - name: a nota de cada abertura
+        run: node ferramentas/medidor.js abertura
